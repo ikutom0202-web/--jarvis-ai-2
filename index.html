@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>JARVIS — Autonomous AI Agent</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#070d1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="JARVIS">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+:root{--bg:#070d1a;--bg2:#0f1b33;--card:rgba(255,255,255,.07);--line:rgba(160,190,255,.16);--tx:#e8eefc;--sub:#8fa2c8;--ac:#5b8cff;--ac2:#9b7bff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px)}
+:root:not([data-theme="light"]){color-scheme:dark}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:radial-gradient(120% 60% at 50% 0,#1b2c52 0,var(--bg) 60%) fixed var(--bg);color:var(--tx);font-family:"Hiragino Sans","Noto Sans JP",system-ui,sans-serif;display:flex;flex-direction:column;overflow:hidden}
+main{flex:1;overflow-y:auto;padding:16px 16px 12px;max-width:520px;width:100%;margin:0 auto}
+.screen{display:none}.screen.on{display:block}
+h1{font-size:26px;letter-spacing:.12em;font-weight:500}
+.sub{color:var(--sub);font-size:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin-top:12px}
+.row{display:flex;align-items:center;gap:12px;padding:9px 0}
+.row+.row{border-top:1px solid var(--line)}
+.row b{font-size:14px;font-weight:600}
+.orb-wrap{display:flex;flex-direction:column;align-items:center;margin:22px 0 8px}
+.orb{width:150px;height:150px;border-radius:50%;border:0;color:#fff;font-size:15px;letter-spacing:.1em;cursor:pointer;
+background:radial-gradient(circle at 35% 30%,#8fb0ff,#3b4fd0 45%,#0a1030 80%);box-shadow:0 0 0 10px rgba(91,140,255,.12),0 0 60px rgba(91,140,255,.55);transition:.3s}
+.orb.listen{animation:pulse 1.2s infinite;box-shadow:0 0 0 14px rgba(155,123,255,.25),0 0 80px rgba(155,123,255,.8)}
+.orb.speak{animation:pulse .7s infinite}
+@keyframes pulse{50%{transform:scale(1.07)}}
+@media(prefers-reduced-motion:reduce){.orb{animation:none!important}}
+.greet{text-align:center;margin-top:14px;font-size:19px}
+.bar{display:flex;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:26px;padding:6px 6px 6px 16px;margin:10px 16px calc(8px + 0px);max-width:488px;width:calc(100% - 32px);align-self:center}
+.bar input{flex:1;background:none;border:0;outline:0;color:var(--tx);font-size:15px;min-width:0}
+.bar button{touch-action:manipulation;user-select:none;-webkit-user-select:none;cursor:pointer;width:40px;height:40px;border-radius:50%;border:0;background:linear-gradient(135deg,var(--ac),var(--ac2));color:#fff;font-size:17px;cursor:pointer}
+.bar button.rec{background:#e5484d}
+nav{display:flex;border-top:1px solid var(--line);background:rgba(7,13,26,.9);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{touch-action:manipulation;user-select:none;-webkit-user-select:none;cursor:pointer;flex:1;background:none;border:0;color:var(--sub);padding:9px 0 8px;font-size:11px;cursor:pointer;display:flex;flex-direction:column;gap:3px;align-items:center}
+nav button span{font-size:20px}
+nav button.on{color:var(--ac)}
+.msgs{display:flex;flex-direction:column;gap:10px}
+.m{max-width:86%;padding:10px 13px;border-radius:16px;font-size:14px;line-height:1.6;white-space:pre-wrap}
+.m.u{align-self:flex-end;background:#1d3764}
+.m.a{align-self:flex-start;background:var(--card);border:1px solid var(--line)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.chip{background:var(--card);border:1px solid var(--line);color:var(--tx);border-radius:20px;padding:8px 14px;font-size:13px;cursor:pointer}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 4px;text-align:center;font-size:12px;color:var(--tx);cursor:pointer}
+.tile span{display:block;font-size:20px;margin-bottom:4px}
+.tile small{color:var(--sub);font-size:11px;display:block;margin-top:2px}
+h3{font-size:13px;color:var(--sub);font-weight:500;margin:16px 0 4px}
+.stat{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.stat .card{margin:0}.stat .big{font-size:26px;margin:4px 0}.stat .big small{font-size:13px}
+.spark{display:flex;align-items:flex-end;gap:3px;height:34px;margin-top:6px}
+.spark i{flex:1;background:var(--ac);border-radius:2px 2px 0 0;opacity:.8}
+.tasks label{display:flex;gap:10px;padding:9px 0;font-size:14px;align-items:center}
+.tasks input{accent-color:var(--ac);width:18px;height:18px}
+.tasks .done{text-decoration:line-through;color:var(--sub)}
+.set label{display:flex;justify-content:space-between;align-items:center;padding:10px 0;font-size:14px}
+.set select,.set input[type=text]{background:var(--bg2);color:var(--tx);border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+.empty{color:var(--sub);font-size:13px;padding:14px 0;text-align:center}
+</style>
+<style>
+button,a,input,textarea,select{touch-action:manipulation;-webkit-tap-highlight-color:rgba(255,255,255,.12)}
+button{touch-action:manipulation;user-select:none;-webkit-user-select:none;cursor:pointer;cursor:pointer;user-select:none;-webkit-user-select:none}
+input,textarea{font-size:16px}
+</style>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+</head>
+<body>
+<main>
+<section id="s-home" class="screen on">
+ <h1>JARVIS</h1><div class="sub">Your AI Assistant</div>
+ <div class="orb-wrap"><button class="orb" id="orb" aria-label="話しかける">JARVIS</button>
+ <div class="greet" id="greet"></div><div class="sub">タップして話しかける</div></div>
+ <div class="card"><div class="sub" id="date"></div>
+  <div class="row"><div>📅</div><div><b>今日のスケジュール</b><div class="sub" id="todaySum"></div></div></div>
+  <div class="row"><div>✅</div><div><b>リマインダー</b><div class="sub" id="remSum"></div></div></div>
+  <div class="row"><div>📰</div><div><b>今日のニュース</b><div class="sub">AI・テクノロジーの最新情報をチェック</div></div></div></div>
+ <div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><b>📝 副業ノート 今日のネタ</b><button class="chip" id="ideaBtn">ネタを出す</button></div>
+  <div id="ideaList" class="sub" style="margin-top:8px;line-height:1.8">ボタンで今日の記事ネタを3つ提案します。</div>
+  <a id="noteGo" target="_blank" rel="noopener" style="display:block;margin-top:10px;color:var(--ac);font-size:13px;text-decoration:none">副業ノートを開く</a></div>
+</section>
+
+<section id="s-chat" class="screen">
+ <div class="msgs" id="msgs"></div>
+ <div class="chips"><button class="chip" data-q="今日の予定を教えて">📅 スケジュール</button><button class="chip" data-q="今日の天気は？">☀ 天気</button><button class="chip" data-q="ニュースを教えて">📰 ニュース</button><button class="chip" data-q="やることリストを教えて">✅ タスク</button></div>
+</section>
+
+<section id="s-dash" class="screen">
+ <h1>JARVIS</h1><div class="sub">Life Dashboard</div>
+ <div class="card" style="background:linear-gradient(160deg,#233a6b,#0e1830)"><div class="sub" id="date2"></div><div style="margin-top:20px;font-size:17px;line-height:1.7">「やるべきことを、<br>やるだけで、未来は変わる。」</div></div>
+ <div class="grid4">
+  <div class="tile"><span>☀</span>28°<small>愛知県</small></div>
+  <div class="tile"><span>🚗</span>仕事<small>2シフト</small></div>
+  <div class="tile"><span>💚</span>健康<small id="wt1">52.0 kg</small></div>
+  <div class="tile"><span>💰</span>お金<small>¥721,000</small></div></div>
+ <h3>クイックアクセス</h3>
+ <div class="grid3">
+  <div class="tile" data-go="chat" data-q="今日の予定を教えて"><span>🗓</span>スケジュール</div>
+  <div class="tile" data-go="tasks"><span>📝</span>メモ</div>
+  <div class="tile" data-go="chat"><span>🧠</span>AIアシスタント</div>
+  <div class="tile" data-go="chat" data-q="ニュースを教えて"><span>🔍</span>検索</div>
+  <div class="tile" data-go="data"><span>📊</span>データ</div>
+  <div class="tile" data-go="settings"><span>⚙</span>設定</div>
+   <div class="tile" data-go="side"><span>🚀</span>副業自動化</div></div>
+</section>
+
+<section id="s-data" class="screen">
+ <h1 style="font-size:20px">パーソナルデータ</h1>
+ <div class="stat">
+  <div class="card"><div class="sub">体重・体組成</div><div class="big"><span id="wt">52.0</span><small> kg</small></div><div class="spark" id="sp1"></div><div class="sub" style="margin-top:6px">体脂肪率 12.8%</div></div>
+  <div class="card"><div class="sub">睡眠</div><div class="big">6<small>時間</small>12<small>分</small></div><div class="spark" id="sp2"></div><div class="sub" style="margin-top:6px">深い睡眠 1時間48分</div></div>
+  <div class="card"><div class="sub">収入・支出</div><div class="big">¥182,000</div><div class="spark" id="sp3"></div><div class="sub" style="margin-top:6px">今月(9月)</div></div>
+  <div class="card"><div class="sub">ガソリン代(車)</div><div class="big">¥7,420</div><div class="spark" id="sp4"></div><div class="sub" style="margin-top:6px">今月</div></div></div>
+ <div class="card"><div class="sub">体重を記録</div><div style="display:flex;gap:8px;margin-top:8px"><input id="wIn" type="number" step="0.1" placeholder="例 52.4" style="flex:1;background:var(--bg2);border:1px solid var(--line);border-radius:10px;color:var(--tx);padding:9px"><button class="chip" id="wBtn">保存</button></div></div>
+</section>
+
+<section id="s-tasks" class="screen">
+ <h1 style="font-size:20px">タスク・メモ</h1>
+ <div class="card tasks" id="taskList"></div>
+ <div class="bar" style="margin:12px 0;width:100%"><input id="tIn" placeholder="やることを追加"><button id="tBtn">＋</button></div>
+</section>
+
+
+
+<section id="s-side" class="screen">
+  <h1 style="font-size:21px;letter-spacing:.08em">JARVIS AUTOPILOT</h1>
+  <div class="sub">自律型AIエージェント / 副業コマンドセンター</div>
+
+  <div class="card" style="background:linear-gradient(145deg,#172b5b,#0b1225);overflow:hidden">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div>
+        <div class="sub">AUTONOMOUS MODE</div>
+        <div style="font-size:22px;font-weight:650;margin-top:5px">副業オートパイロット</div>
+        <div class="sub" id="autoStatus" style="margin-top:6px">待機中 — 指示を待っています</div>
+      </div>
+      <div id="agentDot" style="width:12px;height:12px;border-radius:50%;background:#5b8cff;box-shadow:0 0 18px #5b8cff;margin-top:5px"></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:16px">
+      <div class="tile"><small>稼働日数</small><div style="font-size:20px;font-weight:650;margin-top:4px" id="daysRun">1</div></div>
+      <div class="tile"><small>今月売上</small><div style="font-size:20px;font-weight:650;margin-top:4px">¥0</div></div>
+      <div class="tile"><small>実行回数</small><div style="font-size:20px;font-weight:650;margin-top:4px" id="runCount">0</div></div>
+    </div>
+
+    <button class="chip" id="autoStart" style="width:100%;margin-top:12px;padding:11px;background:linear-gradient(135deg,var(--ac),var(--ac2));border:0">▶ JARVISに副業を任せる</button>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <b>🧠 エージェント計画</b>
+      <span class="sub" id="planPct">0%</span>
+    </div>
+    <div id="autoProgress" style="height:7px;background:rgba(255,255,255,.1);border-radius:8px;margin-top:12px;overflow:hidden">
+      <i id="autoBar" style="display:block;width:0;height:100%;background:linear-gradient(90deg,var(--ac),var(--ac2));transition:.4s"></i>
+    </div>
+    <div id="autoStep" class="sub" style="margin-top:9px">目標を設定 → 調査 → 企画 → 制作 → 投稿準備 → 分析</div>
+  </div>
+
+  <div class="card">
+    <b>🎯 エージェントへの指示</b>
+    <input id="sideTopic" type="text" value="AIを使った副業・仕事効率化"
+      style="width:100%;margin-top:9px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;color:var(--tx);padding:11px">
+    <div class="chips">
+      <button class="chip agentPreset" data-topic="AI副業">AI副業</button>
+      <button class="chip agentPreset" data-topic="AI×YouTube">AI×YouTube</button>
+      <button class="chip agentPreset" data-topic="AI×note">AI×note</button>
+      <button class="chip agentPreset" data-topic="ショート動画">ショート動画</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <b>📦 コンテンツ・パイプライン</b>
+    <div id="contentIdeas" class="sub" style="margin-top:10px;line-height:1.85">
+      JARVISを起動すると、企画候補を生成します。
+    </div>
+  </div>
+
+  <div class="card">
+    <b>⚡ クイックアクション</b>
+    <div class="grid3">
+      <button class="tile" id="actResearch"><span>🔎</span>ネタ調査<small>リサーチ</small></button>
+      <button class="tile" id="actScript"><span>✍️</span>台本作成<small>AI生成</small></button>
+      <button class="tile" id="actPost"><span>📤</span>投稿準備<small>チェック</small></button>
+      <button class="tile" id="actAnalyze"><span>📊</span>分析<small>改善案</small></button>
+      <button class="tile" id="actSchedule"><span>🗓</span>予定<small>明日の計画</small></button>
+      <button class="tile" id="actReport"><span>📋</span>レポート<small>実行履歴</small></button>
+    </div>
+  </div>
+
+  <div class="card">
+    <b>🔗 外部自動化</b>
+    <label style="display:flex;justify-content:space-between;align-items:center;padding:10px 0">
+      Make.com Webhook
+      <input id="webhook" type="text" placeholder="https://hook.make.com/..."
+        style="width:56%;background:var(--bg2);border:1px solid var(--line);border-radius:8px;color:var(--tx);padding:7px">
+    </label>
+    <div class="sub">Webhookを設定すると、JARVISからMake.com等へタスクを送信できます。未設定時はデモモードです。</div>
+    <button class="chip" id="saveWebhook" style="margin-top:8px">接続設定を保存</button>
+  </div>
+
+  <div class="card">
+    <b>🛰️ JARVISログ</b>
+    <div id="autoLog" class="sub" style="margin-top:9px;line-height:1.8">ローカル実行モード。外部接続は任意です。</div>
+  </div>
+</section>
+
+<section id="s-settings" class="screen">
+ <h1 style="font-size:20px">設定</h1>
+ <div class="card set">
+  <label>名前<input type="text" id="nm" style="width:130px"></label>
+  <label>音声で返答<input type="checkbox" id="spk" checked style="width:20px;height:20px;accent-color:var(--ac)"></label>
+  <label>声の速さ<select id="rate"><option value="0.9">ゆっくり</option><option value="1.05" selected>ふつう</option><option value="1.25">はやい</option></select></label>
+  <label>声<select id="voice"></select></label></div>
+ <div class="sub" style="margin-top:12px;line-height:1.7">音声認識はSafari/Chromeで使えます。予定・タスク・体重は端末内に保存されます。</div>
+</section>
+</main>
+
+<div class="bar" id="bar"><input id="inp" placeholder="何でも聞いてください..." enterkeyhint="send"><button id="mic" aria-label="音声入力">🎤</button><button id="send" aria-label="送信">➤</button></div>
+<nav id="nav">
+ <button data-t="home" class="on"><span>🏠</span>ホーム</button>
+ <button data-t="tasks"><span>☑</span>タスク</button>
+ <button data-t="chat"><span>💬</span>AI</button>
+ <button data-t="dash"><span>📋</span>ダッシュ</button>
+  <button data-t="side"><span>🚀</span>副業</button>
+ <button data-t="settings"><span>⚙</span>設定</button>
+</nav>
+
+<script>
+window.__JARVIS_READY__=false;
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const store={get(k,d){try{const v=localStorage.getItem('jv_'+k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem('jv_'+k,JSON.stringify(v))}catch(e){}}};
+let name=store.get('name','郁斗'),tasks=store.get('tasks',[{t:'ガソリン代を記録',d:0},{t:'トレーニング',d:0},{t:'副業ノートを書く',d:0}]),weights=store.get('w',[52.6,52.4,52.3,52.1,52.2,52.0]);
+const now=new Date(),days='日月火水木金土'[now.getDay()];
+const dstr=`${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')} (${days})`;
+const SCHED=[['08:00 - 17:00','トヨタ車体(組立・シャシー)(2交替)'],['17:10 - 01:50','夜勤(予定)'],['03:00 - 03:30','残業(予定)']];
+function go(t){$$('.screen').forEach(e=>e.classList.toggle('on',e.id==='s-'+t));$$('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));$('#bar').style.display=(t==='tasks'||t==='settings'||t==='data'||t==='side')?'none':'flex';$('main').scrollTop=0}
+$$('nav button').forEach(b=>b.onclick=()=>go(b.dataset.t));
+function greet(){const h=now.getHours();return(h<11?'おはよう':h<18?'こんにちは':'こんばんは')+'、'+name}
+function render(){
+ $('#greet').textContent=greet();$('#date').textContent=dstr;$('#date2').textContent=dstr;
+ $('#todaySum').textContent=SCHED[0][0]+' '+SCHED[0][1];
+ const open=tasks.filter(x=>!x.d).length;$('#remSum').textContent=`やることリスト ${open}件`;
+ const w=weights.at(-1);$('#wt').textContent=w.toFixed(1);$('#wt1').textContent=w.toFixed(1)+' kg';
+ spark('#sp1',weights.slice(-10),true);spark('#sp2',[5,7,6,4,6,6.2,7]);spark('#sp3',[2,3,5,4,6,8,5,9]);spark('#sp4',[2,3,2,4,3,5,6,4]);
+ $('#taskList').innerHTML=tasks.length?tasks.map((x,i)=>`<label><input type="checkbox" data-i="${i}" ${x.d?'checked':''}><span class="${x.d?'done':''}">${esc(x.t)}</span></label>`).join(''):'<div class="empty">タスクはありません。下から追加できます</div>';
+ $$('#taskList input').forEach(c=>c.onchange=()=>{tasks[c.dataset.i].d=c.checked?1:0;store.set('tasks',tasks);render()});
+}
+function spark(id,a,zoom){const mn=zoom?Math.min(...a)-.3:0,mx=Math.max(...a);$(id).innerHTML=a.map(v=>`<i style="height:${Math.max(8,(v-mn)/(mx-mn||1)*100)}%"></i>`).join('')}
+function esc(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+$('#tBtn').onclick=()=>{const v=$('#tIn').value.trim();if(!v)return;tasks.push({t:v,d:0});store.set('tasks',tasks);$('#tIn').value='';render()};
+$('#wBtn').onclick=()=>{const v=parseFloat($('#wIn').value);if(!v)return;weights.push(v);store.set('w',weights);$('#wIn').value='';render()};
+$$('[data-go]').forEach(t=>t.onclick=()=>{go(t.dataset.go);if(t.dataset.q)ask(t.dataset.q)});
+$$('.chip[data-q]').forEach(c=>c.onclick=()=>ask(c.dataset.q));
+
+// replies (rule-based)
+function reply(q){
+ if(/副業|ノート|note|ネタ/.test(q)){const c=store.get('ideas',null);go('home');return c&&c.d===dstr?'今日の記事ネタです。\n'+c.l.map(x=>'・'+x).join('\n'):'ホームの「ネタを出す」で今日の記事ネタを作れます。副業ノートから、下書きから整形まで自動で進められます。'}
+ if(/予定|スケジュール|シフト/.test(q))return '了解しました。本日のスケジュールは以下の通りです。\n\n'+SCHED.map(s=>'・'+s[0]+'  '+s[1]).join('\n')+'\n\n何か他に知りたいことはありますか?';
+ if(/天気|気温/.test(q))return '愛知県は現在28°C、晴れです。日中は暑くなりそうなので、水分補給を忘れずに。';
+ if(/ニュース/.test(q))return '最新のAI・テクノロジー情報をチェックする準備をしています。実際のニュース取得はClaude連携の段階で対応できます。';
+ if(/タスク|やること|リマインダー/.test(q)){const o=tasks.filter(x=>!x.d);return o.length?`未完了のタスクは${o.length}件です。\n`+o.map(x=>'・'+x.t).join('\n'):'未完了のタスクはありません。お疲れさまでした。'}
+ if(/体重/.test(q))return `直近の体重は${weights.at(-1).toFixed(1)}kgです。`;
+ const m=q.match(/(.+?)を?(追加|メモ|登録)/);if(m){tasks.push({t:m[1].trim(),d:0});store.set('tasks',tasks);render();return `「${m[1].trim()}」をタスクに追加しました。`}
+ if(/時間|何時/.test(q))return `現在は${new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}です。`;
+ if(/ありがとう/.test(q))return 'どういたしまして。';
+ return '申し訳ありません、まだその内容には対応できません。「今日の予定」「天気」「タスク」「〇〇を追加」などをお試しください。';
+}
+function add(c,t){const d=document.createElement('div');d.className='m '+c;d.textContent=t;$('#msgs').appendChild(d);$('main').scrollTop=1e5}
+function ask(q){q=q.trim();if(!q)return;go('chat');add('u',q);const handled=handleJarvisCommand(q);if(handled){setTimeout(()=>{const r=/副業|自動化|オートパイロット/.test(q)?'副業オートパイロットを開きました。指示を実行できます。':'画面を切り替えました。';add('a',r);say(r)},250);$('#inp').value='';return}const r=reply(q);setTimeout(()=>{add('a',r);say(r)},350);$('#inp').value=''}
+$('#send').onclick=()=>ask($('#inp').value);
+window.__JARVIS_READY__=true;
+// JARVIS command shortcuts
+function handleJarvisCommand(q){
+  const x=q.trim();
+  if(/副業|自動化|オートパイロット/.test(x)){go('side'); if(/開始|やって|任せ/.test(x)) runAutopilot(); return true}
+  if(/タスク.*追加|追加して/.test(x)){return false}
+  if(/ダッシュ|dashboard/i.test(x)){go('dash');return true}
+  if(/設定/.test(x)){go('settings');return true}
+  return false;
+}
+
+$('#inp').onkeydown=e=>{if(e.key==='Enter'&&!e.isComposing)ask($('#inp').value)};
+
+// speech
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;let rec=null,listening=false;
+function listen(){
+ if(!SR){add('a','このブラウザは音声認識に未対応です。Safari か Chrome で開いてください。');go('chat');return}
+ if(listening){rec&&rec.stop();return}
+ rec=new SR();rec.lang='ja-JP';rec.interimResults=false;
+ rec.onstart=()=>{listening=true;$('#orb').classList.add('listen');$('#mic').classList.add('rec')};
+ rec.onend=()=>{listening=false;$('#orb').classList.remove('listen');$('#mic').classList.remove('rec')};
+ rec.onresult=e=>ask(e.results[0][0].transcript);
+ rec.onerror=e=>{go('chat');add('a','マイクを使えませんでした('+e.error+')。ブラウザのマイク許可を確認してください。')};
+ try{speechSynthesis.cancel();rec.start()}catch(e){}
+}
+$('#orb').onclick=listen;$('#mic').onclick=listen;
+function loadVoices(){const vs=speechSynthesis.getVoices().filter(v=>v.lang.startsWith('ja'));$('#voice').innerHTML=vs.map(v=>`<option>${v.name}</option>`).join('')||'<option>標準</option>';$('#voice').value=store.get('voice',vs[0]?.name)||''}
+if('speechSynthesis'in window){speechSynthesis.onvoiceschanged=loadVoices;loadVoices()}
+if('serviceWorker' in navigator && location.protocol!=='file:'){navigator.serviceWorker.register('./sw.js').catch(()=>{})}
+function say(t){
+ if(!$('#spk').checked||!('speechSynthesis'in window))return;
+ speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t.replace(/[・\n]/g,' '));u.lang='ja-JP';u.rate=parseFloat($('#rate').value);
+ const v=speechSynthesis.getVoices().find(v=>v.name===$('#voice').value);if(v)u.voice=v;
+ u.onstart=()=>$('#orb').classList.add('speak');u.onend=()=>$('#orb').classList.remove('speak');speechSynthesis.speak(u)
+}
+$('#nm').value=name;$('#nm').onchange=e=>{name=e.target.value||'ユーザー';store.set('name',name);render()};
+$('#voice').onchange=e=>store.set('voice',e.target.value);
+const NOTE='https://claude.ai/artifact/XJvwCKmFcZ7oNyQwRRkVKc';$('#noteGo').href=NOTE;
+let ai=null; // 外部AIはAPI/Make.com接続時に利用。ローカルでは内蔵ロジックで動作
+function showIdeas(l){$('#ideaList').innerHTML=l.map(x=>'・'+esc(x)).join('<br>')}
+const cache=store.get('ideas',null);if(cache&&cache.d===dstr)showIdeas(cache.l);
+$('#ideaBtn').onclick=async()=>{
+ const c=store.get('ideas',null);if(c&&c.d===dstr){showIdeas(c.l);return}
+ if(!ai){$('#ideaList').textContent='AI機能は claude.ai で開いたときに使えます。';return}
+ $('#ideaBtn').disabled=true;$('#ideaList').textContent='考え中…';
+ try{const r=await ai.json('noteで読まれやすい副業・AI活用系の記事タイトル案を3つ。誇張表現なし。JSONの文字列配列のみ返す。',{cache:false});
+  const l=(Array.isArray(r)?r:[]).slice(0,3).map(String);store.set('ideas',{d:dstr,l});showIdeas(l)}
+ catch(e){$('#ideaList').textContent='うまくいきませんでした。もう一度試してください。'}
+ $('#ideaBtn').disabled=false};
+
+// JARVIS autonomous side-business command center
+const AUTO_KEY='autopilot';
+let autoState=store.get(AUTO_KEY,{webhook:'',runs:0,startDate:dstr});
+$('#webhook').value=autoState.webhook||'';
+$('#runCount').textContent=autoState.runs||0;
+function autoLog(msg){
+  const el=$('#autoLog');
+  const stamp=new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  el.innerHTML=`[${stamp}] ${esc(msg)}<br>`+el.innerHTML;
+}
+function setAuto(p,status,step){
+  $('#autoBar').style.width=p+'%';
+  $('#planPct').textContent=p+'%';
+  $('#autoStatus').textContent=status;
+  $('#autoStep').textContent=step;
+  $('#agentDot').style.background=p<100?'#9b7bff':'#5b8cff';
+  $('#agentDot').style.boxShadow=p<100?'0 0 18px #9b7bff':'0 0 18px #5b8cff';
+}
+function makeIdeas(topic){
+  return [
+    `「${topic}」を初心者向けに3ステップで解説`,
+    `AIで${topic}を効率化する具体例5選`,
+    `${topic}を7日間実践して分かったこと`
+  ];
+}
+async function sendWebhook(payload){
+  const url=(autoState.webhook||'').trim();
+  if(!url) return {ok:false,skipped:true};
+  try{
+    await fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify(payload),keepalive:true});
+    return {ok:true};
+  }catch(e){return {ok:false,error:e.message}}
+}
+async function runAutopilot(){
+  const btn=$('#autoStart'); btn.disabled=true;
+  const topic=$('#sideTopic').value.trim()||'AIを使った副業・仕事効率化';
+  const ideas=makeIdeas(topic);
+  const steps=[
+    [10,'目標を理解中','ユーザーの指示をタスクへ分解しています…'],
+    [25,'リサーチ中','テーマ・競合・切り口を整理しています…'],
+    [45,'企画中','伸ばすための企画候補を作っています…'],
+    [65,'制作中','タイトル・構成・台本の下書きを作っています…'],
+    [82,'投稿準備中','公開前チェックと外部自動化を実行しています…'],
+    [100,'完了','次回は実績データを分析して改善します']
+  ];
+  autoLog('JARVIS起動：'+topic);
+  for(const [p,s,st] of steps){
+    setAuto(p,s,st);
+    if(p===45) $('#contentIdeas').innerHTML=ideas.map((x,i)=>`${i+1}. ${esc(x)}`).join('<br>');
+    if(p===82){
+      const payload={source:'JARVIS',type:'autonomous_side_business',topic,ideas,created_at:new Date().toISOString(),user_name:name};
+      const result=await sendWebhook(payload);
+      if(result.skipped) autoLog('Webhook未設定：デモモードで続行');
+      else if(result.ok) autoLog('外部自動化へ送信成功');
+      else autoLog('外部送信失敗：設定を確認');
+    }
+    await new Promise(r=>setTimeout(r,p===100?350:650));
+  }
+  autoState.runs=(autoState.runs||0)+1;
+  store.set(AUTO_KEY,autoState);
+  $('#runCount').textContent=autoState.runs;
+  autoLog('自律フロー完了：実行 '+autoState.runs+'回目');
+  btn.disabled=false;
+}
+$('#autoStart').onclick=runAutopilot;
+$$('.agentPreset').forEach(b=>b.onclick=()=>{$('#sideTopic').value=b.dataset.topic});
+$('#saveWebhook').onclick=()=>{
+  autoState.webhook=$('#webhook').value.trim();
+  store.set(AUTO_KEY,autoState);
+  autoLog(autoState.webhook?'Webhook接続設定を保存しました':'Webhookを解除しました');
+};
+function quickAction(label){
+  autoLog(label+'を実行：JARVISが処理計画を作成しました');
+  $('#autoStatus').textContent=label+' 実行準備完了';
+}
+$('#actResearch').onclick=()=>quickAction('ネタ調査');
+$('#actScript').onclick=()=>quickAction('台本作成');
+$('#actPost').onclick=()=>quickAction('投稿準備');
+$('#actAnalyze').onclick=()=>quickAction('分析');
+$('#actSchedule').onclick=()=>quickAction('明日の予定作成');
+$('#actReport').onclick=()=>quickAction('実行レポート');
+
+add('a','おはようございます。ご用件をどうぞ。\nホームの球体をタップして話しかけることもできます。');
+render();
+</script>
+</body>
+</html>
